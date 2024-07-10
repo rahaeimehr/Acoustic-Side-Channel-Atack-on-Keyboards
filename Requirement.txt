@@ -1,0 +1,22 @@
+pyWinhook==1.6.2
+scipy==1.8.1
+wavio==0.0.4
+PyAudio==0.2.11
+xlsxwriter==3.0.3
+#auto-py-to-exe
+noisereduce==2.0.1
+
+
+# conda install -c conda-forge pywin32
+# conda install -c conda-forge pywinhook
+# conda install -c anaconda pyaudio
+# conda install -c conda-forge keyboard
+# conda install -c conda-forge librosa
+# pip install pillow
+# pip install matplotlib
+# pip install pandas
+# treelib
+# nltk
+# xlsxwriter
+# noisereduce
+# openpyxl
