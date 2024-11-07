@@ -134,10 +134,10 @@ if __name__ == '__main__':
     #     plt.axvspan(key[0] , key[1],  color='orange')
  
 
-    for i in range(1,4):
-        base_addres = 'TestFiles\poria/words'
-        wav_filename = f'{base_addres}\\word_{i}.wav'
-        xls_filename = f'{base_addres}\\word_{i}.xlsx'
+    for i in range(1,18):
+        base_addres = 'TestFiles/poria/words'
+        wav_filename = f'{base_addres}/word_{i}.wav'
+        xls_filename = f'{base_addres}/word_{i}.xlsx'
         data = xls.read_excel_data(xls_filename) 
         number_of_keys = len(data)
         plot_waveform(wav_filename, i, number_of_keys)

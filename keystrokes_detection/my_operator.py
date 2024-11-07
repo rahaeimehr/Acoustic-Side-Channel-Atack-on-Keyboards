@@ -5,10 +5,10 @@ from hex_to_ascii import main_converter
 import os
 
 a = True
-a = False
+#a = False
 
 b = True
-b = False
+#b = False
 
 c = True
 # c = False
@@ -18,7 +18,7 @@ c = True
 current_file_path = os.getcwd()
 print(current_file_path)
 head_tail = os.path.split(current_file_path)[0]
-folder = current_file_path + r"/TestFiles/sample23/"
+folder = current_file_path + r"/TestFiles/36/"
 # folder = r"C:\Users\ataheritajar\Box\codes\recorder\dataset\638321135259134449142/"
 if a:
     print("\n\nTRAIN PHASE:")
@@ -38,8 +38,8 @@ if b:
     print("\n\nSPLIT WORDS WAVE:")
     file_address = folder
 
-    n_seconds_of_silence = 4
-    remove_from_start_time = 1
+    n_seconds_of_silence = 0
+    remove_from_start_time = 0
     factor = 1
     c_sharp = True
     wave_spliter = WordSpliter(n_seconds_of_silence=n_seconds_of_silence,
@@ -53,7 +53,7 @@ if c:
     # PREDICT:
     print("\n\nPREDICT:")
     parent_path = folder + r'/words/'
-    file = parent_path + r'word_20.wav'
+    file = parent_path + r'word_2.wav'
     output_dir = parent_path + r'keystrokes_words_1/'
 
     plot = True
