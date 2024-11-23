@@ -1,5 +1,12 @@
+# enviroment 
 __pycache__/
 *.pyc
 *.pyo
 .venv/
 .env/
+
+# data
+data/
+
+# personal file
+personal_.txt
