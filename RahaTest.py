@@ -56,7 +56,7 @@ def find_best_threshold(energy, time, best_threshold, factor, num_desired_keystr
 def energy_analyser(audio_array, sample_rate):
 
     hop_length =  1
-    frame_length = 4410
+    frame_length = sample_rate // 10 
 
     energy = librosa.feature.rms(y=audio_array, frame_length=frame_length, hop_length=hop_length, center=True)[0]
     frames = range(len(energy))
@@ -95,12 +95,14 @@ def plot_waveform(filename, i, number_of_keys):
     time = np.linspace(0, duration, num=len(audio_array))
     # ae_time , amp_env = amplitude_envelope(audio_array, sample_rate)
     etime, energy = energy_analyser(audio_array, sample_rate)
-    
+    plt.figure()
+    plt.plot(time, audio_array)
+    plt.show(block=True)
+
     segments, keys, threshold = find_best_threshold(smooth(energy,500), etime, best_threshold=50, factor=1, num_desired_keystrokes=number_of_keys)
 
 
-    plt.figure()
-    plt.plot(time, audio_array)
+
     # plt.plot(ae_time, amp_env, color='y', label='Amplitude Envelope')   
     plt.plot(etime, energy, color='r', label='Energy (RMSE)')    
     plt.step(etime, keys, color='darkmagenta', where='post') 
@@ -134,8 +136,8 @@ if __name__ == '__main__':
     #     plt.axvspan(key[0] , key[1],  color='orange')
  
 
-    for i in range(1,18):
-        base_addres = 'TestFiles/poria/words'
+    for i in range(1,4):
+        base_addres = 'TestFiles/sample1/words'
         wav_filename = f'{base_addres}/word_{i}.wav'
         xls_filename = f'{base_addres}/word_{i}.xlsx'
         data = xls.read_excel_data(xls_filename) 
