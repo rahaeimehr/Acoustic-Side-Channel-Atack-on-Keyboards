@@ -136,7 +136,7 @@ if __name__ == '__main__':
     #     plt.axvspan(key[0] , key[1],  color='orange')
  
 
-    for i in range(1,4):
+    for i in range(1,5):
         base_addres = 'TestFiles/sample1/words'
         wav_filename = f'{base_addres}/word_{i}.wav'
         xls_filename = f'{base_addres}/word_{i}.xlsx'
