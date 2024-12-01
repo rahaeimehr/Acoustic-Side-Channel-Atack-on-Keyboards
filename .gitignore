@@ -6,7 +6,7 @@ __pycache__/
 .env/
 
 # data
-# data/
+data/
 
 # personal file
 personal_.txt
