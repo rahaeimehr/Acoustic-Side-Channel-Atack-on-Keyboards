@@ -39,24 +39,18 @@ To use this project, clone the repository and ensure you have Python installed w
    pip install -r requirements.txt 
    ```
 
-## Project Structure
+## DAta folder Structure
+
+sample :
 
   
-    project-name/
+    SCAAI/
     ├── data/
     │   ├── sample1/
     │   │   └── words/
-    │   ├── big_data/
-    │   │   └── 1/
-    │   │       └── words/
-    │   └── pipeline/
-    │       ├── tensors/
-    │       └── temp/
-    │           └── tensors/
-    ├── data_preprocessing.py
-    ├── train.py
-    ├── README.md
-    └── requirements.txt
+    │   ├── sample2/
+    │   │   └── words/
+
 
 
 ## Usage
