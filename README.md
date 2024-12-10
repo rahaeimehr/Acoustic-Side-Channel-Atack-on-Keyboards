@@ -59,12 +59,12 @@ sample :
 The `data_preprocessing.py` script processes the raw data and organizes it into the required format for training. Use the following commands:
 
 ```bash
-python data_preprocessing.py --data_path ../data/sample1/words--output_path ../data/pipeline 
+python data_preproccesing.py --data_path ../data/sample1/words --output_path ../data/pipeline 
 ```
 
 ### Training
 The train.py script trains the model using preprocessed data. Use the following commands:
 
 ```bash
-python train.py --data_path ../data/pipeline/tensors
+python train.py --data_path ../data/pipeline/tensors/
 ```
