@@ -40,8 +40,8 @@ def get_args_parser():
 
 def load_data(data_path):
     # Load the preprocessed and saved data
-    X_train_tensor, y_train_tensor = torch.load(data_path + 'train_data.pt')
-    X_test_tensor, y_test_tensor = torch.load(data_path + 'test_data.pt')
+    X_train_tensor, y_train_tensor = torch.load(data_path + '/train_data.pt')
+    X_test_tensor, y_test_tensor = torch.load(data_path + '/test_data.pt')
 
     # Load normalization parameters (mean, std)
     mean, std = torch.load(data_path + 'normalization_params.pt')

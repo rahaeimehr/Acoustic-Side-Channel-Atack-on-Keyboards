@@ -13,21 +13,23 @@ import argparse
 
 
 def get_args_parser():
-    parser = argparse.ArgumentParser('Set data preproccesing args', add_help=False)
-    parser.add_argument('--n_fft', type=int, default=2048, help='n_fft: number of samples used for fft')
+    parser = argparse.ArgumentParser('Set data preprocessing args', add_help=False)
+    
+    # Add arguments for preprocessing
+    parser.add_argument('--n_fft', type=int, default=2048, help='n_fft: number of samples used for FFT')
     parser.add_argument('--hop_length', type=int, default=512, help='hop_length: number of samples between successive frames')
-    parser.add_argument('--n_mels', type=int, default=64, help='number of mel bands')
-
-    parser.add_argument('--resampling_mode', type=str, default='resample minority', 
-                        help='resampling mode: resmaple minority, down sampel majority, data augmentation',
-                        choices=['resample minority', 'down sampel majority', 'data augmentation'])
-    parser.add_argument('--resampling_order', type=str, default='before', 
-                        help='resampling order: before or after spliting data', 
-                        choices=['before', 'after'])
-
-    parser.add_argument('--data_path', type=str, required=True, help='path to data')
-    parser.add_argument('--output_path', type=str, required=True, help='path to save preproccesed data')
-
+    parser.add_argument('--n_mels', type=int, default=64, help='number of Mel bands')
+    
+    parser.add_argument('--data_folders', type=str, nargs='+', required=True, 
+                        help='List of folder paths containing audio and timestamps (space-separated)')
+    parser.add_argument('--output_path', type=str, required=True, help='Path to save preprocessed data')
+    parser.add_argument('--resampling_type', type=str, choices=['majority', 'minority'], default='majority', 
+                        help='type of resampling for balancing data')
+    parser.add_argument('--resampling_order', type=str, choices=['before', 'after'], default='after', 
+                        help='Order of resampling (before or after train-test split)')
+    parser.add_argument('--save', action='store_true', help='Save the preprocessed data')
+    parser.add_argument('--verbose', type=int, default=0, help='Verbose level (0 = silent, 1 = basic, 2 = detailed)')
+    
     return parser
 
 def label_audio(times_ms, timestamps, window_size=50):
@@ -58,6 +60,7 @@ def label_audio(times_ms, timestamps, window_size=50):
     
     return labels
 
+# Extract features for each audio file
 def extract_features(audio, sr, n_fft=2048, n_mels=64, hop_length=512):
     """
     Extracts Mel spectrogram features from audio.
@@ -83,38 +86,49 @@ def extract_features(audio, sr, n_fft=2048, n_mels=64, hop_length=512):
     
     return mel_spectrogram_db, times_ms
 
-# Extract features for each audio file
 
-def read_data(data_path):
-    data_dir = data_path
-    # List to store all loaded data
+
+# Function to read data from multiple folders
+def read_data_multiple_folders(folder_paths):
+    """
+    Reads audio files and associated timestamps from multiple specified directories.
+    
+    Parameters:
+    - folder_paths: List of folder paths to process (e.g., ["../data/sample1/words", "../data/sample2/words"]).
+    
+    Returns:
+    - A dictionary with:
+        - 'audio_data': List of tuples (audio signal, sampling rate).
+        - 'press_times': List of DataFrames containing keypress timestamps.
+    """
     audio_data = []
     press_times = []
 
-    # Loop through all files in the directory
-    for filename in os.listdir(data_dir):
-        # Check if the file is a .wav file
-        if filename.endswith('.wav'):
-            # Load the audio file
-            filepath = os.path.join(data_dir, filename)
-            audio, sr = librosa.load(filepath, sr=None)  # Load with original sampling rate
-            
-            # Extract the word index to find the corresponding .xlsx file
-            word_index = filename.split('_')[1].split('.')[0]
-            if word_index == '0':
-                continue
-            
-            xlsx_filename = f'word_{word_index}.xlsx'
-            
-            # Load the corresponding Excel file
-            xlsx_filepath = os.path.join(data_dir, xlsx_filename)
-            timestamps = pd.read_excel(xlsx_filepath)
-            
-            # Store audio data and timestamps
-            audio_data.append((audio, sr))
-            press_times.append(timestamps)   
+    for folder_path in folder_paths:
+        for filename in os.listdir(folder_path):
+            # Process only .wav files
+            if filename.endswith('.wav'):
+                filepath = os.path.join(folder_path, filename)
+                audio, sr = librosa.load(filepath, sr=None)
+                
+                # Extract word index from filename
+                word_index = filename.split('_')[1].split('.')[0]
+                if word_index == '0':  # Skip placeholder or irrelevant files
+                    continue
+                
+                # Find the corresponding .xlsx file
+                xlsx_filepath = os.path.join(folder_path, f'word_{word_index}.xlsx')
+                if not os.path.exists(xlsx_filepath):
+                    print(f"Warning: Missing timestamp file for {filename}")
+                    continue
+                
+                timestamps = pd.read_excel(xlsx_filepath)
+                audio_data.append((audio, sr))
+                press_times.append(timestamps)
 
-    return {'audio_data': audio_data, 'press_times': press_times, 'timestamps': timestamps}
+    return {'audio_data': audio_data, 'press_times': press_times}
+
+
 
 def prepare_framewise_data(features, labels):
     """
@@ -174,6 +188,32 @@ def resmapeling_minority(X, y):
 
     return X_balanced, y_balanced
 
+    #downsampling the majority class
+def resmapeling_majority(X,y):
+    # Separate samples by class
+    minority_class_indices = np.where(y == 1)[0]
+    majority_class_indices = np.where(y == 0)[0]
+
+    # Calculate the imbalance ratio
+    num_minority = len(minority_class_indices)
+    num_majority = len(majority_class_indices)
+
+    downsampled_majority_indices=np.random.choice(majority_class_indices,size=num_minority,replace=False)
+
+    # Combine with the minority indices to create a balanced dataset
+    balanced_indices = np.hstack([minority_class_indices, downsampled_majority_indices])
+
+    # Shuffle the combined indices to mix classes
+    np.random.shuffle(balanced_indices)
+
+    # Use the balanced indices to create balanced X and y
+    X_balanced = X[balanced_indices]
+    y_balanced = y[balanced_indices]
+
+    return X_balanced, y_balanced
+
+
+
 def normalize_data(X_train, X_test):
     # Normalize features (zero mean, unit variance)
     mean = np.mean(X_train, axis=0)
@@ -185,21 +225,30 @@ def normalize_data(X_train, X_test):
 
     return X_train_normalized, X_test_normalized, mean, std
 
-def preproceed_data(data_path , output_path, n_fft, n_mels, hop_length, resampling_order, save = False, verbose = 0):
-
+def preproceed_data(data_folders , output_path, n_fft, n_mels, hop_length, resampling_order,resampling_type, save = False, verbose = 0):
+    """
+        Preprocess data from multiple folders.
+        
+        Parameters:
+        - data_folders: List of folder paths containing data (e.g., ["../data/sample1/words", "../data/sample2/words"]).
+    
+        - Other parameters .
+        """
     if verbose > 0:
         print("Preprocessing data...")
         if verbose > 1:
-            print("Data path:", data_path)
+            print("Data folders:", data_folders)
             print("Output path:", output_path)
             print("n_fft:", n_fft)
             print("n_mels:", n_mels)
             print("hop_length:", hop_length)
             print("resampling_order:", resampling_order)
+            print("resampling_type:", resampling_type)
 
 
-    # read data from data_path
-    data = read_data(data_path)
+
+    # read data from data_folders
+    data = read_data_multiple_folders(data_folders)
     audio_data = data['audio_data']
     press_times = data['press_times']
 
@@ -223,13 +272,24 @@ def preproceed_data(data_path , output_path, n_fft, n_mels, hop_length, resampli
     raw_y_train = y_train.copy()  # Keep a copy of the raw labels for visualization
 
     # split before resampling or after that 
-    if resampling_order == 'before':
-        X_train, y_train = resmapeling_minority(X_train, y_train)
-        X_train, X_test, y_train, y_test = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
-    elif resampling_order == 'after':
-        X_train, X_test, y_train, y_test = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
-        X_train, y_train = resmapeling_minority(X_train, y_train)
-        X_test, y_test = resmapeling_minority(X_test, y_test)
+    if resampling_type =="majority":
+        if resampling_order == 'before':
+            X_train, y_train = resmapeling_majority(X_train, y_train)
+            X_train, X_test, y_train, y_test = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
+        elif resampling_order == 'after':
+            X_train, X_test, y_train, y_test = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
+            X_train, y_train = resmapeling_majority(X_train, y_train)
+            X_test, y_test = resmapeling_majority(X_test, y_test)
+
+    elif resampling_type == "minority":
+        if resampling_order == 'before':
+            X_train, y_train = resmapeling_minority(X_train, y_train)
+            X_train, X_test, y_train, y_test = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
+        elif resampling_order == 'after':
+            X_train, X_test, y_train, y_test = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
+            X_train, y_train = resmapeling_minority(X_train, y_train)
+
+    
 
     # Normalize the data
     X_train_normalized, X_test_normalized, mean, std = normalize_data(X_train, X_test)
@@ -243,7 +303,7 @@ def preproceed_data(data_path , output_path, n_fft, n_mels, hop_length, resampli
 
     if save:
         # Save the data to disk
-        output_dir = output_path + '/model_data' # ../data/pipeline/model_data
+        output_dir = output_path + '/model_data/' # ../data/pipeline/model_data
         np.save(os.path.join(output_dir, 'X_train.npy'), raw_X_train)
         np.save(os.path.join(output_dir, 'y_train.npy'), raw_y_train)
 
@@ -252,12 +312,12 @@ def preproceed_data(data_path , output_path, n_fft, n_mels, hop_length, resampli
             pickle.dump((raw_X_train, raw_y_train), f)
 
         
-        output_path = output_path + '/tensors' # ../data/pipeline/tensors
-        torch.save((X_train_tensor, y_train_tensor), output_path + 'train_data.pt')
-        torch.save((X_test_tensor, y_test_tensor), output_path + 'test_data.pt')
+        output_path = output_path + '/tensors/' # ../data/pipeline/tensors
+        torch.save((X_train_tensor, y_train_tensor), output_path + '/train_data.pt')
+        torch.save((X_test_tensor, y_test_tensor), output_path + '/test_data.pt')
 
         # Optionally, save the normalization parameters (mean and std)
-        torch.save((mean, std), output_path + 'normalization_params.pt')
+        torch.save((mean, std), output_path + '/normalization_params.pt')
 
     if verbose > 0:
         print("Data saved successfully.")
@@ -275,11 +335,12 @@ def preproceed_data(data_path , output_path, n_fft, n_mels, hop_length, resampli
  
         
 def main(args):
-    preproceed_data(data_path=args.data_path, 
+    preproceed_data(data_folders=args.data_folders, 
                     output_path=args.output_path, 
                     n_fft=args.n_fft, 
                     n_mels=args.n_mels, 
                     hop_length=args.hop_length , 
+                    resampling_type=args.resampling_type,
                     resampling_order=args.resampling_order,
                     save=True, verbose=2)
 
