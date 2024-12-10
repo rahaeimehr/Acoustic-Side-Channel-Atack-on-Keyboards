@@ -8,10 +8,13 @@ from sklearn.model_selection import train_test_split
 
 import torch
 from torch.utils.data import DataLoader, TensorDataset
-
+import random
 import argparse
 
-
+seed=42
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
 def get_args_parser():
     parser = argparse.ArgumentParser('Set data preprocessing args', add_help=False)
     

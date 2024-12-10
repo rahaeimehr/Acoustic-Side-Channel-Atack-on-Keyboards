@@ -10,10 +10,20 @@ import torch
 from torch.utils.data import DataLoader, TensorDataset
 
 import argparse
-
+import random
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
+
+# Set seed for reproducibility
+seed = 42
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
 
 class MLPmodelSigmoidhead(nn.Module):
     def __init__(self, input_size):
