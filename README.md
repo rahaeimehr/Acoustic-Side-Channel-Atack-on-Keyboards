@@ -59,7 +59,8 @@ sample :
 The `data_preprocessing.py` script processes the raw data and organizes it into the required format for training. Use the following commands:
 
 ```bash
-python data_preproccesing.py --data_path ../data/sample1/words --output_path ../data/pipeline 
+python data_preproccesing.py --data_folders ../data/sample1/words ../data/sample2/words ../data/sample23/words --output_path ../data/pipeline 
+
 ```
 
 ### Training
