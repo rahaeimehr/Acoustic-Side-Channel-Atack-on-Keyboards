@@ -23,8 +23,8 @@ class WordSpliter:
         self.reduce_noise = reduce_noise
         self.c_sharp = c_sharp
         if self.c_sharp:
-            self.filepath = file_address + '/words.wav'
-            self.dataset_csv_file_address = file_address + '/words.txt'
+            self.filepath = file_address + 'words.wav'
+            self.dataset_csv_file_address = file_address + 'words.txt'
         else:
             self.filepath = file_address + '/main.wav'
             self.dataset_csv_file_address = file_address + '/main.csv'
@@ -160,7 +160,7 @@ class WordSpliter:
         p = pyaudio.PyAudio()
 
         if self.c_sharp:
-            RATE = 44100
+            RATE = self.sampling_rate
             width = p.get_sample_size(FORMAT)
         else:
             RATE = 44100
@@ -186,16 +186,18 @@ class WordSpliter:
     def split_line(self, split_char=','):
         # print(self.dataset_csv_file_address)
         lst = list()
-        with open(self.dataset_csv_file_address) as file:
+        turn = 0
+
+        with open(self.dataset_csv_file_address) as file:            
             for line in file:
                 line = line.strip()
                 elements = line.split(split_char)
-
-                elements[0] = int(elements[0]) / 10000000 - self.n_seconds_of_silence - self.remove_from_start_time
-                elements[2] = int(elements[2], 16)
-                elements[3] = int(elements[3], 16)
-                lst.append(elements)
-
+                if int(elements[1]) == turn:
+                    elements[0] = int(elements[0]) / 10000000 - self.n_seconds_of_silence - self.remove_from_start_time
+                    elements[2] = int(elements[2], 16)
+                    elements[3] = int(elements[3], 16)
+                    lst.append(elements)
+                    turn ^= 1
         assert lst[0][0] > 0, "The length of the initial silence, faulty noises, or both is not correct!"
 
         my_list = []

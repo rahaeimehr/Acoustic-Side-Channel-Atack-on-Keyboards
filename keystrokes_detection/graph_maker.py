@@ -27,6 +27,7 @@ class PredictedTree:
         if self.tree.size() > 7000:
             raise ValueError("tree size is very big...")
         self.find_deepest_leaf_faster()
+        self.print_prediction_faster()
         # self.tree_show()
 
 
@@ -66,7 +67,7 @@ class PredictedTree:
             self.predicted_keys[steps_i] = list(k for k,_ in itertools.groupby(self.predicted_keys[steps_i]))
 
     def tree_maker_faster(self):
-        # print(f"making the tree...")
+        print(f"making the tree...")
         self.nodes = [[] for _ in range(len(self.predicted_keys))]
         self.second_keys = [[] for _ in range(len(self.predicted_keys))]
         self.first_keys = [[] for _ in range(len(self.predicted_keys))]
@@ -106,7 +107,7 @@ class PredictedTree:
                             self.first_keys[steps_i].append(first_key)
 
     def print_prediction_faster(self):
-        # print("predicted keystrokes:")
+        print("predicted keystrokes:")
         all_results = []
         for my_list in self.predictions:
             if my_list:
@@ -125,7 +126,7 @@ class PredictedTree:
                     continue    
                 if len(result[0]) == self.number_of_char_in_word:
                     all_results.append(result)
-                    # print("Raw Prediction", "".join(result[0]))
+                    print("Raw Prediction", "".join(result[0]))
         # print("\nDetected words after removing spaces:")
         # counter = 0
         # for res in all_results:
@@ -134,13 +135,13 @@ class PredictedTree:
         #         print(counter, word)
         #         counter += 1
 
-        # print("\nDetected words after Checking in dictionary:")
-        # ind = 1
+        print("\nDetected words after Checking in dictionary:")
+        ind = 1
         for res in all_results:
             sentence = english_dictionary_checker(res)
             if sentence: 
-                # print(ind, ":", sentence)
-                # ind +=1
+                print(ind, ":", sentence)
+                ind +=1
                 self.output_words.append(sentence)
         return self.output_words
     

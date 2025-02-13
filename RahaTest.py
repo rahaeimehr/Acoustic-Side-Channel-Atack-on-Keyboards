@@ -97,7 +97,7 @@ def plot_waveform(filename, i, number_of_keys):
     etime, energy = energy_analyser(audio_array, sample_rate)
     plt.figure()
     plt.plot(time, audio_array)
-    plt.show(block=True)
+    plt.show(block=False)
 
     segments, keys, threshold = find_best_threshold(smooth(energy,500), etime, best_threshold=50, factor=1, num_desired_keystrokes=number_of_keys)
 
@@ -136,8 +136,8 @@ if __name__ == '__main__':
     #     plt.axvspan(key[0] , key[1],  color='orange')
  
 
-    for i in range(1,5):
-        base_addres = 'TestFiles/sample1/words'
+    for i in range(1,4):
+        base_addres = 'TestFiles/poria/words'
         wav_filename = f'{base_addres}/word_{i}.wav'
         xls_filename = f'{base_addres}/word_{i}.xlsx'
         data = xls.read_excel_data(xls_filename) 

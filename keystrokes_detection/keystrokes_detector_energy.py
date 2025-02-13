@@ -13,7 +13,7 @@ from graph_maker import PredictedTree
 
 class KeyDdetector:
     def __init__(self, file_path, output_dir="./keystrokes", model_address='', num_desired_keystrokes=None,
-                 plot=False, analyzed=True, delta_time_min_factor=0.5, delta_time_max_factor=1.5):
+                 plot=True, analyzed=True, delta_time_min_factor=0.5, delta_time_max_factor=1.5):
 
         self.frame_length = None
         self.hop_length = None
@@ -70,8 +70,8 @@ class KeyDdetector:
             #     plt.ylabel("Amplitude")
             #     plt.show(block=True)
 
-        # print("inter_keystroke_intervals:", self.inter_keystroke_intervals)
-        # print("len inter_keystroke_intervals:", len(self.inter_keystroke_intervals))
+        print("inter_keystroke_intervals:", self.inter_keystroke_intervals)
+        print("len inter_keystroke_intervals:", len(self.inter_keystroke_intervals))
 
         self.key_detector()
         self.make_graph_of_predictions()
