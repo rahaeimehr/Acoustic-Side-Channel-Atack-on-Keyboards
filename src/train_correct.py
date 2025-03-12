@@ -3,6 +3,7 @@ import pandas as pd
 import librosa
 import numpy as np
 import pickle
+import copy
 
 from sklearn.model_selection import train_test_split
 from sklearn.utils.class_weight import compute_class_weight
@@ -45,7 +46,9 @@ def get_args_parser():
     parser = argparse.ArgumentParser('Set data model training args', add_help=False)
 
     parser.add_argument('--data_path', type=str, required=True, help='path to data')
-    parser.add_argument('--output_path', type=str, required=False, help='path to save preproccesed data')
+    parser.add_argument('--output_path', type=str, required=True, help='path to save preproccesed data')
+
+    parser.add_argument('--save', action='store_true', help='save the model')
     
     parser.add_argument('--device', default='cuda', help='device to use for training / testing')
 
@@ -101,7 +104,13 @@ def train(data_path, output_path, save=False, save_fig=False, verbose=2, device=
     test_accuracies = []
     precisions = []
 
-    num_epochs = 5
+    from tqdm import tqdm
+
+    best_precision = 0.0  # Initialize the best precision
+    best_test_loss = 100  # Initialize the best test loss
+    best_model_state = None  # To store the best model's state
+
+    num_epochs = 20
     for epoch in range(num_epochs):
         # Training loop
         model.train()
@@ -109,7 +118,8 @@ def train(data_path, output_path, save=False, save_fig=False, verbose=2, device=
         correct = 0
         total = 0
 
-        for X_batch, y_batch in train_loader:
+        # Wrap the train_loader with tqdm to display progress
+        for X_batch, y_batch in tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs} - Training", leave=False):
             optimizer.zero_grad()
             X_batch, y_batch = X_batch.to(device), y_batch.to(device)
             
@@ -147,7 +157,8 @@ def train(data_path, output_path, save=False, save_fig=False, verbose=2, device=
         predicted_positives = 0
 
         with torch.no_grad():
-            for X_batch, y_batch in test_loader:
+            # Wrap the test_loader with tqdm for a progress bar during evaluation
+            for X_batch, y_batch in tqdm(test_loader, desc=f"Epoch {epoch+1}/{num_epochs} - Testing", leave=False):
                 X_batch, y_batch = X_batch.to(device), y_batch.to(device)
                 outputs = model(X_batch)
                 
@@ -173,11 +184,18 @@ def train(data_path, output_path, save=False, save_fig=False, verbose=2, device=
             print(f"Test accuracy: {test_accuracy:.4f}")
             print(f"Test precision: {precision:.4f}")
 
+            # Check if current epoch achieved a new best precision
+        if precision > best_precision:
+            best_precision = precision
+            best_model_state = copy.deepcopy(model.state_dict())
+            print(f"New best model found at epoch {epoch+1} with precision: {precision:.4f}")
+
+
     if save:
         model_output = os.path.join(output_path, 'models/')
         # Save the model and related parameters
         torch.save({
-            'model_state_dict': model.state_dict(),
+            'model_state_dict': best_model_state,
             'input_size': input_size,
             'mean': mean,
             'std': std,
@@ -204,7 +222,7 @@ def train(data_path, output_path, save=False, save_fig=False, verbose=2, device=
 def main(args):
     train(data_path=args.data_path, 
           output_path=args.output_path,
-          save=False, save_fig=True, verbose=2, device=args.device)
+          save=args.save , save_fig=True, verbose=2, device=args.device)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser('model training script', parents=[get_args_parser()])
