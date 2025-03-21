@@ -89,12 +89,12 @@ def analyze_recordings(file_path):
         plt.xlabel('Time (seconds)')
         plt.ylabel('Amplitude')
         plt.grid(True)
-        
+        offset = 0.045
         for key in lst:
             if key[2] == chr(0):
-                plt.axvspan(key[0], key[1], color='red')
+                plt.axvspan(key[0] + offset, key[1]+offset, color='red')
             else:
-                plt.axvspan(key[0], key[1], color='darkgray')          
+                plt.axvspan(key[0]+offset, key[1]+offset, color='darkgray')          
         plt.show()
 
     except FileNotFoundError:
@@ -104,4 +104,4 @@ def analyze_recordings(file_path):
 
 
 if __name__ == "__main__":
-    analyze_recordings('dataset/638368630848311343491/words')
+    analyze_recordings('dataset2/638754206430228762355/words')

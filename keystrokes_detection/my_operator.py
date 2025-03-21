@@ -20,8 +20,8 @@ current_file_path = os.getcwd()
 errors =[]
 
 #for dataFolder in helper.get_folders(current_file_path+"/TestFiles"):
-dataFolder = "poria"    
-folder = current_file_path + r"/TestFiles/" + dataFolder + "/"
+dataFolder = "638754091389248604943"    
+folder = current_file_path + r"/dataset2/" + dataFolder + "/"
 print("\n"*5 + folder)
 if a:
     print("\n\nTRAIN PHASE:")
@@ -60,7 +60,7 @@ if c:
     # PREDICT:
     print("\n\nPREDICT:")
     parent_path = folder + r'/words/'
-    file = parent_path + r'word_3.wav'
+    file = parent_path + r'word_34.wav'
     output_dir = parent_path + r'keystrokes_words_1/'
 
     plot = True

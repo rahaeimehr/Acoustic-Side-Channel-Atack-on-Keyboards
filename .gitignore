@@ -132,6 +132,7 @@ dmypy.json
 .pyc
 # dataset
 dataset/
+dataset2/
 output
 keystrokes_detection/model.xlsx
 # *.xlsx
