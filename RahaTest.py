@@ -146,7 +146,7 @@ if __name__ == '__main__':
         first_time = data[0][0] / 2
         for key in data:
             plt.axvspan(key[0], key[1],  color='darkgray')    
-    print("Done!" + "-"*40)
+    input("enter something")
 
 
 
