@@ -137,11 +137,7 @@ if __name__ == '__main__':
  
 
     for i in range(1,4):
-<<<<<<< HEAD
         base_addres = 'TestFiles/poria/words'
-=======
-        base_addres = 'TestFiles/36/words'
->>>>>>> 7b514cc3b4bb885eadecaf9b0c7bbf997d86a81e
         wav_filename = f'{base_addres}/word_{i}.wav'
         xls_filename = f'{base_addres}/word_{i}.xlsx'
         data = xls.read_excel_data(xls_filename) 
@@ -150,7 +146,7 @@ if __name__ == '__main__':
         first_time = data[0][0] / 2
         for key in data:
             plt.axvspan(key[0], key[1],  color='darkgray')    
-    input("enter something")
+    print("Done!" + "-"*40)
 
 
 
