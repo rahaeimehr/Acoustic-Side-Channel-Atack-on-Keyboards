@@ -23,10 +23,13 @@ def get_args_parser():
     parser.add_argument('--hop_length', type=int, default=512, help='hop_length: number of samples between successive frames')
     parser.add_argument('--n_mels', type=int, default=64, help='number of Mel bands')
     
-    parser.add_argument('--data_folders', type=str, nargs='+', required=True, 
+    parser.add_argument('--data_folders', type=str, nargs='+', required=False, 
                         help='List of folder paths containing audio and timestamps (space-separated)')
+    
+    parser.add_argument('--path', type=str, required=True, 
+                        help='the path containing audio and timestamps (space-separated)')
     parser.add_argument('--output_path', type=str, required=True, help='Path to save preprocessed data')
-    parser.add_argument('--resampling_type', type=str, choices=['majority', 'minority'], default='majority', 
+    parser.add_argument('--resampling_type', type=str, choices=['majority', 'minority', 'None'], default='None', 
                         help='type of resampling for balancing data')
     parser.add_argument('--resampling_order', type=str, choices=['before', 'after'], default='after', 
                         help='Order of resampling (before or after train-test split)')
@@ -89,7 +92,34 @@ def extract_features(audio, sr, n_fft=2048, n_mels=64, hop_length=512):
     
     return mel_spectrogram_db, times_ms
 
-
+def read_folders(path):
+    
+    audio_data=[]
+    press_times=[]
+    for folder_name in os.listdir(path):
+        if folder_name.isdigit():
+            folder_path=os.path.join(path,folder_name) + '/words'
+            # print('§§§§§§§§§§§§§§§§§§§§§§§')
+            # print(folder_path)
+            for file_name in os.listdir(folder_path ):
+                if file_name.endswith(".wav"):
+                    file_path=os.path.join(folder_path ,file_name)
+                    audio,sr=librosa.load(file_path,sr=None)
+                    audio_data.append((audio, sr))
+                elif file_name.endswith(".xlsx"):
+                    word_index=file_name.split("_")[1].split(".")[0]
+                    if word_index == '0':  # Skip placeholder or irrelevant files
+                        continue
+                    
+                    xlsx_filepath = os.path.join(folder_path, f'word_{word_index}.xlsx')
+                    if not os.path.exists(xlsx_filepath):
+                            print(f"Warning: Missing timestamp file for {word_index}")
+                            continue
+                    timestamps = pd.read_excel(xlsx_filepath)
+                    
+                    press_times.append(timestamps)
+                    
+    return{"audio_data":audio_data,"press_times":press_times}
 
 # Function to read data from multiple folders
 def read_data_multiple_folders(folder_paths):
@@ -228,7 +258,8 @@ def normalize_data(X_train, X_test):
 
     return X_train_normalized, X_test_normalized, mean, std
 
-def preproceed_data(data_folders , output_path, n_fft, n_mels, hop_length, resampling_order,resampling_type, save = False, verbose = 0):
+# def preproceed_data(data_folders , output_path, n_fft, n_mels, hop_length, resampling_order,resampling_type, save = False, verbose = 0):
+def preproceed_data(path , output_path, n_fft, n_mels, hop_length, resampling_order,resampling_type, save = False, verbose = 0):
     """
         Preprocess data from multiple folders.
         
@@ -240,7 +271,9 @@ def preproceed_data(data_folders , output_path, n_fft, n_mels, hop_length, resam
     if verbose > 0:
         print("Preprocessing data...")
         if verbose > 1:
-            print("Data folders:", data_folders)
+            #print("Data folders:", data_folders)
+            print("Path:", path)
+
             print("Output path:", output_path)
             print("n_fft:", n_fft)
             print("n_mels:", n_mels)
@@ -251,7 +284,8 @@ def preproceed_data(data_folders , output_path, n_fft, n_mels, hop_length, resam
 
 
     # read data from data_folders
-    data = read_data_multiple_folders(data_folders)
+    # data = read_data_multiple_folders(data_folders)
+    data = read_folders(path)
     audio_data = data['audio_data']
     press_times = data['press_times']
 
@@ -291,6 +325,10 @@ def preproceed_data(data_folders , output_path, n_fft, n_mels, hop_length, resam
         elif resampling_order == 'after':
             X_train, X_test, y_train, y_test = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
             X_train, y_train = resmapeling_minority(X_train, y_train)
+            X_test, y_test = resmapeling_minority(X_test, y_test)
+
+    else:
+        X_train, X_test, y_train, y_test = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
 
     
 
@@ -338,7 +376,7 @@ def preproceed_data(data_folders , output_path, n_fft, n_mels, hop_length, resam
  
         
 def main(args):
-    preproceed_data(data_folders=args.data_folders, 
+    preproceed_data(path=args.path, #data_folders=args.data_folders, 
                     output_path=args.output_path, 
                     n_fft=args.n_fft, 
                     n_mels=args.n_mels, 

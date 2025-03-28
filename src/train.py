@@ -5,6 +5,7 @@ import numpy as np
 import pickle
 
 from sklearn.model_selection import train_test_split
+from sklearn.utils.class_weight import compute_class_weight
 
 import torch
 from torch.utils.data import DataLoader, TensorDataset
@@ -45,6 +46,8 @@ def get_args_parser():
 
     parser.add_argument('--data_path', type=str, required=True, help='path to data')
     parser.add_argument('--output_path', type=str, required=False, help='path to save preproccesed data')
+    
+    parser.add_argument('--device', default='cuda', help='device to use for training / testing')
 
     return parser
 
@@ -62,14 +65,21 @@ def load_data(data_path):
 
     return X_train_tensor, y_train_tensor, X_test_tensor, y_test_tensor, mean, std
 
-def train(data_path, output_path, save=False,save_fig=False, verbose=2):
+def train(data_path, output_path, save=False,save_fig=False, verbose=2, device='cuda'):
+
     # Load the preprocessed and saved data
     X_train_tensor, y_train_tensor, X_test_tensor, y_test_tensor, mean, std = load_data(data_path)
 
+    # y_train_np = y_train_tensor.cpu().numpy()
+    y_train_np = y_train_tensor.numpy().ravel() 
+    class_weights = compute_class_weight(class_weight='balanced', classes=np.array([0, 1]), y=y_train_np)
+    class_weights = torch.tensor(class_weights, dtype=torch.float32).to(device)
+
+    print(f"Class weights: {class_weights}")
     # Initialize the model, loss function, and optimizer
     input_size = X_train_tensor.shape[1]
     model = MLPmodelSigmoidhead(input_size=input_size)
-    criterion = nn.BCEWithLogitsLoss()
+    criterion =  nn.BCEWithLogitsLoss(pos_weight=class_weights[0]) # nn.BCEWithLogitsLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
     # Create DataLoader for training and testing
@@ -88,9 +98,11 @@ def train(data_path, output_path, save=False,save_fig=False, verbose=2):
     train_accuracies = []
     test_losses = []
     test_accuracies = []
+    precisions = []
+
 
     # Training loop
-    num_epochs = 50
+    num_epochs = 5
     for epoch in range(num_epochs):
         # train model
         model.train()  # Set model to training mode
@@ -129,6 +141,9 @@ def train(data_path, output_path, save=False,save_fig=False, verbose=2):
         test_loss = 0.0
         correct = 0
         total = 0
+
+        true_positives = 0
+        predicted_positives = 0
         with torch.no_grad():
             for X_batch, y_batch in test_loader:
                 X_batch, y_batch = X_batch.to(device), y_batch.to(device)
@@ -139,11 +154,19 @@ def train(data_path, output_path, save=False,save_fig=False, verbose=2):
                 predicted = (outputs > 0.5).float()
                 total += y_batch.size(0)
                 correct += (predicted == y_batch).sum().item()
+
+                true_positives += ((predicted == 1) & (y_batch == 1)).sum().item()
+                predicted_positives += (predicted == 1).sum().item()
             
             test_loss = test_loss / len(test_loader.dataset)
             test_losses.append(test_loss)
             test_accuracies.append(correct / total)
 
+            # Compute precision
+            precision = true_positives / predicted_positives if predicted_positives > 0 else 0.0
+            precisions.append(precision)
+
+            print(f"Test precision: {precision:.4f}")
     if save:
         model_output = output_path + 'models/'
         # Save the model after training if needed
@@ -184,7 +207,7 @@ def train(data_path, output_path, save=False,save_fig=False, verbose=2):
 def main(args):
     train(data_path=args.data_path, 
           output_path=args.output_path,
-          save=False, save_fig=True, verbose=2)
+          save=False, save_fig=True, verbose=2, device=args.device)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser('model training script', parents=[get_args_parser()])

@@ -7,6 +7,8 @@ __pycache__/
 
 # data
 data/
+output/
+staged_product/
 
 # personal file
 personal_.txt
