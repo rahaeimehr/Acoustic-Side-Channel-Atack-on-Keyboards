@@ -90,7 +90,7 @@ python train_correct.py --data_path ../<output dir name>/tensors  --output_path 
 The inference.py script runs inference using a trained model and input data. Use the following command:
 
 ```bash
-python infernce.py --path ../data --audio_number 3 --model_path ../<output dir name>/output/models/model_checkpoint.pth --output_path ../<output dir name>
+python inference.py --path ../data --audio_number 3 --model_path ../<output dir name>/output/models/model_checkpoint.pth --output_path ../<output dir name>
 ```
 
 ## Parameters

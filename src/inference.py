@@ -6,7 +6,7 @@ import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 
-from raw_data_preproccesing import label_audio, extract_features, prepare_framewise_data, normalize_data, read_raw_data
+from src.raw_data_preprocessing import label_audio, extract_features, prepare_framewise_data, normalize_data, read_raw_data
 
 import torch.nn as nn
 class MyModel(nn.Module):
@@ -23,7 +23,6 @@ class MyModel(nn.Module):
         x = torch.relu(self.fc3(x))
         x = torch.sigmoid(self.output(x))  # Output probability between 0 and 1
         return x
-
 
 def keep_first_every_four(tensor, gap=4):
         result = torch.zeros_like(tensor)
@@ -63,9 +62,9 @@ def get_args_parser():
     
     return parser
 
-def inference(args):
+def inference(path , model_path, output_path, audio_number = 0, show_plot = False, threshold=0.9,  n_fft=2048, n_mels=64, hop_length=512):
     
-    path = args.path
+    # path = args.path
     # read data from data_folders
     # data = read_data_multiple_folders(data_folders)
     data = read_raw_data(path)
@@ -74,9 +73,9 @@ def inference(args):
 
     # Extract features for each audio file
     print('processing audio files...')
-    n_fft = args.n_fft
-    n_mels = args.n_mels
-    hop_length = args.hop_length
+    # n_fft = args.n_fft
+    # n_mels = args.n_mels
+    # hop_length = args.hop_length
     features = []
     times_list = []
     for (audio, sr), timestamps in zip(audio_data, press_times):
@@ -124,8 +123,8 @@ def inference(args):
     model.eval()
 
     print('inference...')
-    exp_number = args.audio_number
-    threshold = args.threshold
+    exp_number = audio_number
+    threshold = threshold
     input_data = torch.tensor(norm_X_train[exp_number], dtype=torch.float32)
 
     predict_ligit = model(input_data)
@@ -149,7 +148,7 @@ def inference(args):
     post_prediction = keep_first_every_four(predictions)
     print(post_prediction)
     # tensor([0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1])
-    if args.show_plot:
+    if show_plot:
          # Create time axes
 
         plot_audio = audio_data[exp_number][0]
@@ -180,10 +179,10 @@ def inference(args):
     mask = keep_first_every_four(post_prediction)
 
     # Use the mask to filter tensor2
-    filtered_values = times_list[3][mask == 1]
+    filtered_values = times_list[exp_number][mask == 1]
 
     # save the filtered values to a file
-    output_path = args.output_path
+    output_path = output_path
     os.makedirs(output_path, exist_ok=True)
     output_file = os.path.join(output_path, f'predicted_timesteps.txt')
     with open(output_file, 'w') as f:
@@ -191,7 +190,17 @@ def inference(args):
             f.write(f"{value}\n")
     print(f"Filtered values saved to {output_file}")
 
+    return filtered_values
 
+def main(args):
+    inference(path=args.path, 
+              model_path=args.model_path,
+              output_path=args.output_path,
+              audio_number=args.audio_number, 
+              show_plot=args.show_plot, 
+              threshold=args.threshold,
+              n_fft=args.n_fft, n_mels=args.n_mels, hop_length=args.hop_length)
+    
 if __name__ == "__main__":
     parser = argparse.ArgumentParser('Inference script', parents=[get_args_parser()])
     args = parser.parse_args()

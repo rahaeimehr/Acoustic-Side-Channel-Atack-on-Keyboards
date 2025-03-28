@@ -38,7 +38,7 @@ def get_args_parser():
     
     return parser
 
-def label_audio(times_ms, timestamps , overlap, shift = 0.02 , window_size=50 ):
+def label_audio(times_ms, timestamps , overlap, shift = 0.02 ):
     """
     Labels each time frame in the audio based on key press timestamps.
     
@@ -70,7 +70,7 @@ def label_audio(times_ms, timestamps , overlap, shift = 0.02 , window_size=50 ):
     return labels
 
 # Extract features for each audio file
-def extract_features(audio, sr, n_fft=2048, n_mels=64, hop_length=512):
+def extract_features(audio, sr, n_fft, n_mels, hop_length):
     """
     Extracts Mel spectrogram features from audio.
     
@@ -227,7 +227,7 @@ def normalize_data(X_train, X_test):
     return X_train_normalized, X_test_normalized, mean, std
 
 # def preproceed_data(data_folders , output_path, n_fft, n_mels, hop_length, resampling_order,resampling_type, save = False, verbose = 0):
-def preproceed_data(path , output_path, n_fft, n_mels, hop_length, resampling_order,resampling_type, save = False, verbose = 0):
+def preproceed_data(path , output_path, n_fft=2048, n_mels=64, hop_length=512, resampling_order = 'after', resampling_type=None, save = False, verbose = 0):
     """
         Preprocess data from multiple folders.
         
