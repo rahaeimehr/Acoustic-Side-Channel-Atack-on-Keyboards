@@ -11,10 +11,10 @@ from torch.utils.data import DataLoader, TensorDataset
 import random
 import argparse
 
-seed=42
-random.seed(seed)
-np.random.seed(seed)
-torch.manual_seed(seed)
+# seed=42
+# random.seed(seed)
+# np.random.seed(seed)
+# torch.manual_seed(seed)
 def get_args_parser():
     parser = argparse.ArgumentParser('Set data preprocessing args', add_help=False)
     
@@ -38,7 +38,7 @@ def get_args_parser():
     
     return parser
 
-def label_audio(times_ms, timestamps, window_size=50):
+def label_audio(times_ms, timestamps , overlap, shift = 0.02 , window_size=50 ):
     """
     Labels each time frame in the audio based on key press timestamps.
     
@@ -51,17 +51,20 @@ def label_audio(times_ms, timestamps, window_size=50):
     - labels: Binary labels (1 for key press, 0 for no key press) for each frame
     """
     labels = np.zeros(len(times_ms))
-    press_times = timestamps['down'].values  # Assuming column is 'time_in_ms'
+    timestamps = timestamps[timestamps['event'] == 0].copy()
+
+    # Divide the timestamp by 1e7
+    timestamps['time_step'] = timestamps['time_step'] / 1e7 + shift
+    press_times = timestamps['time_step'].values
 
     window_size = times_ms[1] - times_ms[0]
-    
+
     for press_time in press_times:
         # Find frames within the window around the key press time
-        window_start = press_time - window_size / 2
-        window_end = press_time + window_size / 2
+        window_start = press_time 
+        window_end = press_time + window_size * overlap
         active_frames = np.where((times_ms >= window_start) & (times_ms <= window_end))[0]
-        
-        # Label those frames as 1 (key pressed)
+
         labels[active_frames] = 1
     
     return labels
@@ -85,81 +88,46 @@ def extract_features(audio, sr, n_fft=2048, n_mels=64, hop_length=512):
     mel_spectrogram = librosa.feature.melspectrogram(y=audio, sr=sr, n_fft=n_fft, n_mels=n_mels, hop_length=hop_length)
     mel_spectrogram_db = librosa.power_to_db(mel_spectrogram, ref=np.max)
     
-    # Convert frames to time in milliseconds
+    # Convert frames to time 
     times = librosa.frames_to_time(np.arange(mel_spectrogram_db.shape[1]), sr=sr, hop_length=hop_length)
-    # times_ms = times * 1000  # Convert to milliseconds
     times_ms = times
-    
-    return mel_spectrogram_db, times_ms
 
-def read_folders(path):
+    overlap = int(n_fft / hop_length)
     
-    audio_data=[]
-    press_times=[]
-    for folder_name in os.listdir(path):
-        if folder_name.isdigit():
-            folder_path=os.path.join(path,folder_name) + '/words'
-            # print('§§§§§§§§§§§§§§§§§§§§§§§')
-            # print(folder_path)
-            for file_name in os.listdir(folder_path ):
-                if file_name.endswith(".wav"):
-                    file_path=os.path.join(folder_path ,file_name)
-                    audio,sr=librosa.load(file_path,sr=None)
-                    audio_data.append((audio, sr))
-                elif file_name.endswith(".xlsx"):
-                    word_index=file_name.split("_")[1].split(".")[0]
-                    if word_index == '0':  # Skip placeholder or irrelevant files
-                        continue
-                    
-                    xlsx_filepath = os.path.join(folder_path, f'word_{word_index}.xlsx')
-                    if not os.path.exists(xlsx_filepath):
-                            print(f"Warning: Missing timestamp file for {word_index}")
-                            continue
-                    timestamps = pd.read_excel(xlsx_filepath)
-                    
-                    press_times.append(timestamps)
-                    
-    return{"audio_data":audio_data,"press_times":press_times}
+    return mel_spectrogram_db, times_ms, overlap
 
-# Function to read data from multiple folders
-def read_data_multiple_folders(folder_paths):
-    """
-    Reads audio files and associated timestamps from multiple specified directories.
-    
-    Parameters:
-    - folder_paths: List of folder paths to process (e.g., ["../data/sample1/words", "../data/sample2/words"]).
-    
-    Returns:
-    - A dictionary with:
-        - 'audio_data': List of tuples (audio signal, sampling rate).
-        - 'press_times': List of DataFrames containing keypress timestamps.
-    """
+
+def read_raw_data(path):
     audio_data = []
     press_times = []
 
-    for folder_path in folder_paths:
-        for filename in os.listdir(folder_path):
-            # Process only .wav files
-            if filename.endswith('.wav'):
-                filepath = os.path.join(folder_path, filename)
-                audio, sr = librosa.load(filepath, sr=None)
-                
-                # Extract word index from filename
-                word_index = filename.split('_')[1].split('.')[0]
-                if word_index == '0':  # Skip placeholder or irrelevant files
-                    continue
-                
-                # Find the corresponding .xlsx file
-                xlsx_filepath = os.path.join(folder_path, f'word_{word_index}.xlsx')
-                if not os.path.exists(xlsx_filepath):
-                    print(f"Warning: Missing timestamp file for {filename}")
-                    continue
-                
-                timestamps = pd.read_excel(xlsx_filepath)
-                audio_data.append((audio, sr))
-                press_times.append(timestamps)
+    for folder_name in os.listdir(path):
+        if folder_name.isdigit():
+            folder_path = os.path.join(path, folder_name)
+            files = set(os.listdir(folder_path))  # Convert to set for quick lookup
+            
+            # Find all "text.wav" files in the folder
+            for file_name in files:
+                if file_name.endswith("text.wav"):
+                    text_file = file_name.replace("text.wav", "text.txt")
+                    
+                    # Ensure both files exist
+                    if text_file in files:
+                        # Load audio
+                        file_path_audio = os.path.join(folder_path, file_name)
+                        audio, sr = librosa.load(file_path_audio, sr=None)
+                        audio_data.append((audio, sr))
+                        
+                        # Load text data
+                        file_path_text = os.path.join(folder_path, text_file)
+                        df_text = pd.read_csv(file_path_text, header=None, usecols=[0, 1], names=['time_step', 'event'])
+                        press_times.append(df_text)
 
-    return {'audio_data': audio_data, 'press_times': press_times}
+                        print(f"reading {file_name} and  {text_file} are in {folder_path}")
+                    else:
+                        print(f"Skipping {file_name} as {text_file} is missing in {folder_path}")
+
+    return {"audio_data": audio_data, "press_times": press_times}
 
 
 
@@ -285,7 +253,7 @@ def preproceed_data(path , output_path, n_fft, n_mels, hop_length, resampling_or
 
     # read data from data_folders
     # data = read_data_multiple_folders(data_folders)
-    data = read_folders(path)
+    data = read_raw_data(path)
     audio_data = data['audio_data']
     press_times = data['press_times']
 
@@ -293,16 +261,15 @@ def preproceed_data(path , output_path, n_fft, n_mels, hop_length, resampling_or
     features = []
     times_list = []
     for (audio, sr), timestamps in zip(audio_data, press_times):
-        mel_features, times_ms = extract_features(audio, sr, n_fft=n_fft, n_mels=n_mels, hop_length=hop_length)
+        mel_features, times_ms, overlap = extract_features(audio, sr, n_fft=n_fft, n_mels=n_mels, hop_length=hop_length)
         features.append(mel_features)
         times_list.append(times_ms)
 
     # labling data
     labels = []
     for times_ms, timestamps in zip(times_list, press_times):
-        labels.append(label_audio(times_ms, timestamps))
+        labels.append(label_audio(times_ms, timestamps, overlap))
 
-    
     # Prepare the frame-wise data
     X_train, y_train = prepare_framewise_data(features, labels)
     raw_X_train = X_train.copy()  # Keep a copy of the raw features for visualization
@@ -329,8 +296,6 @@ def preproceed_data(path , output_path, n_fft, n_mels, hop_length, resampling_or
 
     else:
         X_train, X_test, y_train, y_test = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
-
-    
 
     # Normalize the data
     X_train_normalized, X_test_normalized, mean, std = normalize_data(X_train, X_test)
@@ -374,7 +339,51 @@ def preproceed_data(path , output_path, n_fft, n_mels, hop_length, resampling_or
 
         print("acceptable error margin.", times_ms[1] - times_ms[0])
  
-        
+    if verbose > 1:
+        import matplotlib.pyplot as plt
+
+        # Find indices where label is 1
+        ones_indices = np.where(raw_y_train == 1)[0]
+
+        if len(ones_indices) == 0:
+            print("No labels with 1 found.")
+        else:
+            # Randomly pick one index where label is 1
+            center_idx = np.random.choice(ones_indices)
+            # center_idx = 7075
+
+            # Define slice range around the selected index
+            slice_length = 50  # Total slice length
+            half_slice = slice_length // 2
+
+            # Ensure the slice stays within bounds
+            start_idx = max(0, center_idx - half_slice)
+            end_idx = min(raw_X_train.shape[0], center_idx + half_slice)
+
+            # Extract the slice
+            mel_slice = raw_X_train[start_idx:end_idx, :]
+            labels_slice = raw_y_train[start_idx:end_idx]
+
+            # Plot mel spectrogram
+            plt.figure(figsize=(10, 6))
+            plt.imshow(mel_slice.T, aspect='auto', origin='lower', cmap='magma')
+
+            # Add vertical lines where labels are 1
+            for i, label in enumerate(labels_slice):
+                if label == 1:
+                    plt.axvline(i, color='cyan', linestyle='--', alpha=0.8)
+
+            # Mark the chosen center label
+            center_position = center_idx - start_idx
+            plt.axvline(center_position, color='red', linestyle='-', linewidth=2, label="Selected Center Label")
+
+            plt.colorbar(label="Magnitude")
+            plt.xlabel("Time Frames")
+            plt.ylabel("Frequency Bins")
+            plt.title(f"Mel Spectrogram with Labels (Center at {center_idx})")
+            plt.legend()
+            plt.show()
+
 def main(args):
     preproceed_data(path=args.path, #data_folders=args.data_folders, 
                     output_path=args.output_path, 
