@@ -1,18 +1,20 @@
 from keystrokes_detector_energy import KeyDdetector
 from train import MatrixMaker
 from word_spliter import WordSpliter
+from word_spliter import AudioSpliter
 from hex_to_ascii import main_converter
+import data_structures as ds
 import os
 import helper
 
-a = True
-#a = False
+#a = True
+a = False
 
 b = True
 #b = False
 
-c = True
-#c = False
+#c = True
+c = False
 
 
 # # TRAIN PHASE:
@@ -20,8 +22,8 @@ current_file_path = os.getcwd()
 errors =[]
 
 #for dataFolder in helper.get_folders(current_file_path+"/TestFiles"):
-dataFolder = "638754091389248604943"    
-folder = current_file_path + r"/dataset2/" + dataFolder + "/"
+dataFolder = "1"    
+folder = current_file_path + r"/TestFiles/" + dataFolder + "/"
 print("\n"*5 + folder)
 if a:
     print("\n\nTRAIN PHASE:")
@@ -42,11 +44,27 @@ if a:
 
 # SPLIT WORDS WAVE:
 if b:
+    
+    noise_sample = ds.AudioFile(folder + r"random.wav", folder + r"random.txt")
+    noise_sample.plot_keystrokes_on_waveform()
+    print(noise_sample.sound_data)
+    audio_to_split = ds.AudioFile(folder + r"words.wav" , folder + r"words.txt")
+    audio_to_split.plot_keystrokes_on_waveform()
+    print("Noise First key:", noise_sample.get_nth_keystrokePressTime(0), noise_sample.get_nth_keystrokePressTime(1))
+    print("Audio First key:", noise_sample.get_nth_keystrokePressTime(0), noise_sample.get_nth_keystrokePressTime(1))
+
+    audio_spliter = AudioSpliter(audio_file=audio_to_split)
+    audio_spliter.set_noise_sample(noise_sample)
+    
+    
+    audio_spliter.test()
+    
+if not b:
     print("\n\nSPLIT WORDS WAVE:")
     file_address = folder
 
-    n_seconds_of_silence = 1
-    remove_from_start_time = 1
+    n_seconds_of_silence = 0
+    remove_from_start_time = 0
     factor = 1
     c_sharp = True
     wave_spliter = WordSpliter(n_seconds_of_silence=n_seconds_of_silence,

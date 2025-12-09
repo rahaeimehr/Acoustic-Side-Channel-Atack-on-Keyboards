@@ -1,9 +1,3 @@
-"""
-Written by Alireza Taheri ( March 2022 )
-
-Inspired by Audio processing scripts for acoustic keylogger project. Repository is located at
-https://github.com/shoyo-inokuchi/acoustic-keylogger-research.
-"""
 import os
 import wave
 from copy import deepcopy
@@ -14,6 +8,164 @@ from scipy.io import wavfile as wav
 import noisereduce as nr
 import xls_handler
 from scipy.signal import wiener
+import data_structures as ds
+
+class AudioSpliter:
+    def __init__(self, audio_file):           
+        self.audio_file: ds.AudioFile = audio_file
+        self.output_address = "./"
+        self.noise_sample: ds.AudioFile = None
+        self.audio_sampling_rate = 0
+        self.noise_samppling_rate = 0
+        self.sound_data = []
+        self.time = []
+    
+    def set_noise_sample(self, noise_sample):
+        self.noise_sample = noise_sample
+        end_point = self.noise_sample.get_nth_keystrokePressTime(0)
+        if end_point == 0:
+            print("a key was pressed before recording started, please check the noise sample file.")
+            a = self.noise_sample.get_nth_keystrokePressTime(1) - self.noise_sample.get_nth_keystrokeReleaseTime(0)
+            if a<0.5:
+                raise ValueError("The noise sample is too short.")
+            start_point = self.noise_sample.get_nth_keystrokeReleaseTime(0) + 0.2
+            end_point = self.noise_sample.get_nth_keystrokePressTime(1) - 0.2
+        else:
+            start_point = 0
+            end_point = end_point - 0.2
+            if end_point<= start_point:
+                raise ValueError("The noise sample is too short.")
+             
+        print("Noise Sampling starts from ", start_point , " and ends at " , end_point)
+        
+        self.noise_sample.trim_sound_data(start_point, end_point)
+        
+        
+    def test(self):
+        print("AudioSpliter test function")
+        print("Audio file:", self.audio_file)
+        print("Noise sample:", self.noise_sample)
+        print("Output address:", self.output_address)
+
+
+    # Sound preprocessing before keystroke detection
+    def silence_threshold(self, ):
+        """Return the silence threshold of the sound data.
+        The sound data should begin with n-seconds of silence.
+        """
+
+        num_samples = self.sampling_rate * self.n_seconds_of_silence
+        start_num_samples = int(self.sampling_rate * self.remove_from_start_time)
+
+        if self.reduce_noise:
+            noise_clip = self.sound_data[start_num_samples:num_samples + start_num_samples]
+            noise_reduced = nr.reduce_noise(y=self.sound_data, sr=self.sampling_rate, y_noise=noise_clip)
+            # noise_reduced = wiener(self.sound_data,noise = 0.5).astype(np.int16)
+            # noise_reduced = self.myNoiseReducer(self.sound_data,frameLength= 0.02).astype(np.int16)
+
+            # noise_reduced = self.myNoiseReducer(self.sound_data,frameLength= 0.007).astype(np.int16)
+
+            # noise_reduced = self.myNoiseReducer(self.sound_data,frameLength= 0.01).astype(np.int16)
+
+            # Remove silence part from sound
+            self.sound_data = noise_reduced[num_samples + start_num_samples:]
+            self.save_wave(self.sound_data, 0)  # for saveing the sound without noise
+        else:
+            self.sound_data = self.sound_data[num_samples + start_num_samples:]
+
+    def myNoiseReducer(self, sound, noise=None, frameLength=0.1):
+        frame_Length = int(self.sampling_rate * frameLength)
+        sum = 0
+        m = 0
+        start = 0
+
+        for i in range(len(sound)):
+            # sum += abs(sound[i])
+            m = max(m, abs(sound[i]))
+            if (((i + 1) % frame_Length) == 0):
+                # avg = sum / frame_Length
+                for j in range(start, i + 1):
+                    # sound[j] = avg
+                    sound[j] = m
+                # sum = 0
+                m = 0
+                start = i + 1
+        return sound
+        # TODO: Fixed this function
+        for j in range(start, len(sound)):
+            sound[j] = 0
+
+
+
+    def splitter(self):
+
+        self.silence_threshold()
+
+        if self.c_sharp:
+            df_list = self.split_line()
+            # print("df_list", df_list)
+
+        else:
+            df = pd.read_csv(self.dataset_csv_file_address)
+            df_list = df.values.tolist()
+            # print(df_list)
+
+        space_number = 1
+
+        sound_start = df_list[0][0] / 2.0
+
+        word_timing = []
+
+        for step in range(0, len(df_list)):
+
+            word_timing.append([df_list[step][0] - sound_start, df_list[step][1] - sound_start, chr(df_list[step][4])])
+
+            # print(step, df_list[step][4], chr(df_list[step][4]))
+
+            if df_list[step][4] == 'Space' or df_list[step][4] == 'Return' or df_list[step][4] == 13:
+                # end = df_list[step-1][1] + ((df_list[step][0] - df_list[step-1][1]) / 2) - self.n_seconds_of_silence
+                end = (df_list[step - 1][1] + df_list[step][0]) / 2.0
+                # end = (df_list[step][1] + df_list[step+1][0])/2
+
+                if step < len(df_list) - 1:
+                    start = (df_list[step][1] + df_list[step + 1][0]) / 2.0
+
+                self.save_wave(self.sound_data[int(sound_start * self.sampling_rate): int(end * self.sampling_rate)], space_number)
+                word_timing.pop() # for removing spaces or inters
+                xls_handler.write_matrix_to_file(word_timing, f'{self.output}/words/word_{space_number}.xlsx',
+                                                 column_titles=["down", "up", "key"])
+                word_timing = []
+
+                sound_start = start
+                space_number += 1
+                last_sep = step
+
+        if last_sep < len(df_list) - 1:
+            xls_handler.write_matrix_to_file(word_timing, f'{self.output}/words/word_{space_number}.xls',
+                                             column_titles=["down", "up", "key"])
+            self.save_wave(self.sound_data[int(end * self.sampling_rate):], space_number)
+
+    def save_wave(self, sound_data, number):
+        # print(number, sound_data, len(sound_data))
+        # chunk = 1024
+        FORMAT = pyaudio.paInt16
+        CHANNELS = 1
+        p = pyaudio.PyAudio()
+
+        if self.c_sharp:
+            RATE = self.sampling_rate
+            width = p.get_sample_size(FORMAT)
+        else:
+            RATE = 44100
+            width = p.get_sample_size(FORMAT)
+        os.makedirs(f'{self.output}/words', exist_ok=True)
+        wf = wave.open(f'{self.output}/words/word_{number}.wav', 'wb')
+        wf.setnchannels(CHANNELS)
+        wf.setsampwidth(width)
+        wf.setframerate(RATE)
+        sound_data_int16 = np.asarray(sound_data, dtype=np.int16)
+        wf.writeframes(sound_data_int16.tobytes())
+        wf.close()
 
 
 class WordSpliter:

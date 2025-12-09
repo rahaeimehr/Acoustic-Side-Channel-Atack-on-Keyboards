@@ -104,4 +104,4 @@ def analyze_recordings(file_path):
 
 
 if __name__ == "__main__":
-    analyze_recordings('dataset2/638754206430228762355/words')
+    analyze_recordings('Te')

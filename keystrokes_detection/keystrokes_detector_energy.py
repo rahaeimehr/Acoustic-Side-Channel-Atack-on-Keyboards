@@ -114,14 +114,12 @@ class KeyDdetector:
 
 
     def window_analyser(self):
-
-
-        self.frame_length = 4410   # 100ms
-        number_of_compare = 5
-        
+      
         self.signal, self.sr = librosa.load(self.file_path, sr=None)
         sample_duration = 1 / self.sr
-        # print(f"One sample lasts for {sample_duration:6f} seconds")
+        self.frame_length = self.sr / 10   # 100ms
+        number_of_compare = 5        # print(f"One sample lasts for {sample_duration:6f} seconds")
+        
         tot_samples = len(self.signal)
         duration = 1 / self.sr * tot_samples
         # print(f"The audio lasts for {duration} seconds")

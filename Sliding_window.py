@@ -78,9 +78,21 @@ def plot_waveform(filename, var, number_of_keys):
     
     return time_intervals      
 
+# a random number generator that gets a seed between 0 and 255, and generates a random number between 0 and FFFFFF
+def mapToColor(seed):
+    np.random.seed(seed)
+    return np.random.randint(0, 0xFFFFFF)   
+
+
 
 
 if __name__ == '__main__':
+    for j in range(1, 10):
+        for i in range(1, 10):
+            print(f"Color for {i} is {mapToColor(i):06X}")
+        print('-----------------')
+        
+    exit()    
        
     # hop_length =   441     # 10 ms
     # frame_length = 4410   # 100 ms
@@ -88,7 +100,7 @@ if __name__ == '__main__':
     # plot_waveform('TestFiles\sample2/words.wav', "original_sound", 50)
     avr = []
     for i in range(1,2):
-        base_addres = r"TestFiles\sample23/words"
+        base_addres = r"TestFiles/1/words"
         wav_filename = f'{base_addres}\\word_{i}.wav'
         xls_filename = f'{base_addres}\\word_{i}.xlsx'
         data = xls.read_excel_data(xls_filename) 

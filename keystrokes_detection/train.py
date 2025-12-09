@@ -32,9 +32,9 @@ class MatrixMaker:
         # print(f'{self.file_name}model.xlsx')
 
         self.worksheets = []
-        self.keystrokes = []
-        self.up_times = []
-        self.down_time = []
+        #self.keystrokes = []
+        #self.up_times = []
+        #self.down_time = []
 
     def close_file(self):
         # print("file closed")
@@ -90,40 +90,48 @@ class MatrixMaker:
         print(f"** Means: {means}, Std of means: {std_means}, std of stds:{std_stds} **")
 
     def train(self):
-        if self.c_sharp:
-            df_list = self.split_line(self.dataset_csv_file_address)
-            for i in range(int((len(df_list)) / 2)):
-                self.keystrokes.append(df_list[2 * i][2])
-                self.up_times.append(df_list[2 * i + 1][0])
-                self.down_time.append(df_list[2 * i][0])
-        else:
+        df_list = self.split_line(self.dataset_csv_file_address)
 
-            df = pd.read_csv(self.dataset_csv_file_address)
-            df_list = df.values.tolist()
+        temp = []
+        res = []
 
-            for i in range(1, int((len(df_list)))):
-                if df_list[i][2] != ' ':
-                    self.keystrokes.append(df_list[i][3])
-                else:
-                    self.keystrokes.append(0)
+        for array in df_list:
+            if array[1] == '0':
+                temp.append(array)
+            else:
+                # Find the last array in temp with the same third field
+                flag = False
+                for i in reversed(range(len(temp))):
+                    if temp[i][2] == array[2]:
+                        res.append([temp[i][0], array[0], temp[i][2]])
+                        del temp[i]
+                        flag = True
+                        break      
+                if not flag:
+                    res.append([0, array[0], array[2]])     
+        if len(temp) > 0:
+            for i in range(len(temp)):
+                res.append([temp[i][0], math.inf, temp[i][2]]) 
+        #sorted(res, key=lambda x: x[0])
+        sorted(res)
+        
+        #for i in range(int((len(df_list)) / 2)):
+        #    self.keystrokes.append(df_list[2 * i][2])
+        #    self.up_times.append(df_list[2 * i + 1][0])
+        #    self.down_time.append(df_list[2 * i][0])
 
-                self.up_times.append(df_list[i][1])
-                self.down_time.append(df_list[i][0])
+        for i in range(0, len(res) - 1):
 
-        for i in range(len(self.keystrokes) - 1):
-            # print(self.keystrokes[i], self.keystrokes[i + 1], self.down_time[i + 1] - self.up_times[i])
-            if self.keystrokes[i] not in self.first_keys:
-                print("NOT IN:", self.keystrokes[i])
-                self.keystrokes[i] = 'Space'
+            if res[i][2] not in self.first_keys:
+                print("NOT IN:", res[i][2])
+                res[i][2] = 'Space'
 
-            if self.keystrokes[i + 1] not in self.first_keys:
-                # print("NOT IN2:", (self.keystrokes[i+1]))
-                self.keystrokes[i + 1] = 'Space'
-            # Note: change according to Dr. Rahaeimehr's idea:
-            # self.data.append([self.keystrokes[i], self.keystrokes[i + 1], self.down_time[i + 1] - self.up_times[i]])
-            # delta = ((self.down_time[i+ 1] + self.up_times[i + 1]) / 2) - ((self.down_time[i] + self.up_times[i]) / 2)
-            delta = (self.down_time[i + 1] - self.down_time[i])
-            self.data.append([self.keystrokes[i], self.keystrokes[i + 1], delta])
+            if res[i+1][2] not in self.first_keys:
+                print("NOT IN:", res[i+1][2])
+                res[i+1][2] = 'Space'
+
+            delta = (res[i + 1][0] - res[i][0])
+            self.data.append([res[i][2], res[i + 1][2], delta])
         self.write_matrix_to_file()
         self.write_analysis_to_file()
         self.close_file()

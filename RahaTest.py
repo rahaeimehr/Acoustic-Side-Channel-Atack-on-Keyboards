@@ -113,7 +113,25 @@ def plot_waveform(filename, i, number_of_keys):
     plt.title(f'Waveform Plot_{i}_n={number_of_keys}')
     plt.grid(True)
     plt.show(block=False)
-        
+    
+def plot_waveform(filename):
+    
+    audio_array, sample_rate = librosa.load(filename)
+    # duration in seconds of 1 sample
+    sample_duration = 1 / sample_rate
+    print(f"One sample lasts for {sample_duration:6f} seconds")
+    
+    # duration of debussy audio in seconds
+    tot_samples = len(audio_array)
+    duration = tot_samples / sample_rate 
+    print(f"The audio lenbth is {duration} seconds")
+
+    time = np.linspace(0, duration, num=len(audio_array))
+
+    plt.plot(time, audio_array)
+    plt.show()
+
+            
 def smooth(y, box_pts):
     box = np.ones(box_pts)/box_pts
     y_smooth = np.convolve(y, box, mode='same')
@@ -121,32 +139,20 @@ def smooth(y, box_pts):
 
 
 if __name__ == '__main__':
-    # plot_waveform('TestFiles\words.wav', "original_sound")
-    # data = xls.read_excel_data(r"TestFiles\words\word_1.xlsx")  
-    # first_time = data[0][0] / 2
-    # print(first_time) 
-    # for key in data:
-    #     plt.axvspan(key[0]+ 1.1 + first_time , key[1]+1.1 + first_time,  color='orange')
-        
-    # plot_waveform('TestFiles\words\\word_0.wav', "Reduced Noise" )
-    # data = xls.read_excel_data(r"TestFiles\words\word_1.xlsx")  
-    # first_time = data[0][0] / 2
-    # print(first_time) 
-    # for key in data:
-    #     plt.axvspan(key[0] , key[1],  color='orange')
+    plot_waveform('TestFiles/0/words.wav')
  
 
-    for i in range(1,4):
-        base_addres = 'TestFiles/poria/words'
-        wav_filename = f'{base_addres}/word_{i}.wav'
-        xls_filename = f'{base_addres}/word_{i}.xlsx'
-        data = xls.read_excel_data(xls_filename) 
-        number_of_keys = len(data)
-        plot_waveform(wav_filename, i, number_of_keys)
-        first_time = data[0][0] / 2
-        for key in data:
-            plt.axvspan(key[0], key[1],  color='darkgray')    
-    input("enter something")
+    # for i in range(1,4):
+    #     base_addres = 'TestFiles/2/words'
+    #     wav_filename = f'{base_addres}/word_{i}.wav'
+    #     xls_filename = f'{base_addres}/word_{i}.xlsx'
+    #     data = xls.read_excel_data(xls_filename) 
+    #     number_of_keys = len(data)
+    #     plot_waveform(wav_filename, i, number_of_keys)
+    #     first_time = data[0][0] / 2
+    #     for key in data:
+    #         plt.axvspan(key[0], key[1],  color='darkgray')    
+    # input("enter something")
 
 
 
@@ -155,38 +161,6 @@ if __name__ == '__main__':
 
 
 
-
-
-# # Assuming sr = 22050 Hz and hop_length = 512 samples
-
-# # Convert frame indices to time
-# frames = [0, 1, 2, 3]
-# times = librosa.frames_to_time(frames, sr=22050, hop_length=22050)
-# print(times)
-
-# import numpy as np
-
-# # Generate example data
-# x = np.linspace(0, 10, 100)
-# y = np.sin(x)
-
-# # Define x-coordinates for vertical lines
-# vertical_line1 = 2
-# vertical_line2 = 7
-
-# # Plot the data
-# plt.plot(x, y)
-
-# # Fill the region between vertical lines
-# plt.axvspan(vertical_line1, vertical_line2,  color='orange')
-
-# # Customize the plot
-# plt.xlabel('X-axis')
-# plt.ylabel('Y-axis')
-# plt.title('Array Plot with Vertical Span')
-
-# # Show the plot
-# plt.show()
 
 
 

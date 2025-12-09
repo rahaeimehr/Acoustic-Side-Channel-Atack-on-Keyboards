@@ -2,8 +2,10 @@ import nltk
 
 
 # download the nltk English corpus if necessary
-nltk.download('words')
-
+try:
+    nltk.data.find('corpora/words')
+except LookupError:
+    nltk.download('words')  
 
 def english_dictionary_checker(result):
     english_words = set(nltk.corpus.words.words())
