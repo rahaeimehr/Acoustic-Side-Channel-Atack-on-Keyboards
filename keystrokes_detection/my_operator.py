@@ -7,14 +7,14 @@ import data_structures as ds
 import os
 import helper
 
-#a = True
-a = False
+a = True
+#a = False
 
 b = True
 #b = False
 
-#c = True
-c = False
+c = True
+#c = False
 
 
 # # TRAIN PHASE:
@@ -77,8 +77,8 @@ if not b:
 if c:
     # PREDICT:
     print("\n\nPREDICT:")
-    parent_path = folder + r'/words/'
-    file = parent_path + r'word_34.wav'
+    parent_path = folder + r'words/'
+    file = parent_path + r'word_4.wav'
     output_dir = parent_path + r'keystrokes_words_1/'
 
     plot = True

@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import keystrokes_detection.xls_handler as xls
 import librosa
+from audio_handler import AudioHandler
 
 def find_segments(bool_array, time):
         segments = []
@@ -90,13 +91,14 @@ def plot_waveform(filename, i, number_of_keys):
     # duration of debussy audio in seconds
     tot_samples = len(audio_array)
     duration = tot_samples / sample_rate 
-    print(f"The audio lasts for {duration} seconds")
+    print(f"The audio length:  {duration} seconds")
 
     time = np.linspace(0, duration, num=len(audio_array))
     # ae_time , amp_env = amplitude_envelope(audio_array, sample_rate)
     etime, energy = energy_analyser(audio_array, sample_rate)
     plt.figure()
-    plt.plot(time, audio_array)
+    #plt.plot(time, audio_array)
+    plt.plot(etime,energy)
     plt.show(block=False)
 
     segments, keys, threshold = find_best_threshold(smooth(energy,500), etime, best_threshold=50, factor=1, num_desired_keystrokes=number_of_keys)
@@ -114,21 +116,10 @@ def plot_waveform(filename, i, number_of_keys):
     plt.grid(True)
     plt.show(block=False)
     
-def plot_waveform(filename):
+def plot_waveform(au:AudioHandler):
     
-    audio_array, sample_rate = librosa.load(filename)
-    # duration in seconds of 1 sample
-    sample_duration = 1 / sample_rate
-    print(f"One sample lasts for {sample_duration:6f} seconds")
-    
-    # duration of debussy audio in seconds
-    tot_samples = len(audio_array)
-    duration = tot_samples / sample_rate 
-    print(f"The audio lenbth is {duration} seconds")
-
-    time = np.linspace(0, duration, num=len(audio_array))
-
-    plt.plot(time, audio_array)
+    time = np.linspace(0, au.audio_length, num=au.sample_count)
+    plt.plot(time, au.left_channel)
     plt.show()
 
             
@@ -139,7 +130,9 @@ def smooth(y, box_pts):
 
 
 if __name__ == '__main__':
-    plot_waveform('TestFiles/0/words.wav')
+    au = AudioHandler('TestFiles/4/words.wav')
+    au.print_audio_info()
+    plot_waveform(au)
  
 
     # for i in range(1,4):
