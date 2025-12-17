@@ -6,6 +6,7 @@ from typing import Dict, Optional
 import librosa
 import numpy as np
 import soundfile as sf
+from data_structures import TitlePrint as title
 
 
 class AudioHandler:
@@ -65,6 +66,7 @@ class AudioHandler:
             byte_rate = info.samplerate * block_alignment
 
         return {
+            "Path": self.file_path,
             "format": info.format,
             "format_info": info.format_info,
             "subtype": info.subtype,
@@ -184,6 +186,7 @@ class AudioHandler:
     def print_audio_info(self) -> None:
         metadata = self.get_audio_metadata()
         printable = {
+            "Path": metadata.get("Path"), 
             "Audio format": metadata.get("format_info") or metadata.get("format"),
             "Number of channels": metadata.get("number_of_channels"),
             "Sample rate": metadata.get("sample_rate"),
@@ -193,6 +196,7 @@ class AudioHandler:
             "Sample format detail": metadata.get("sample_format_detail"),
             "Duration (s)": metadata.get("audio_length"),
         }
-
+        title.Info('Audio Info')
         for label, value in printable.items():
             print(f"{label}: {value if value is not None else 'Unknown'}")
+        title.Info('End',2)

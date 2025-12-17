@@ -1,5 +1,4 @@
-import numpy as np
-b = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-print(b.shape)
-print("test","is","good",end="\n"*5)
-print("---------------")
+temp = [0,1,2,3,4,5]
+print(reversed(range(len(temp))))
+for i in reversed(range(len(temp))):
+    print(i, temp[i])

@@ -89,3 +89,55 @@ class AudioFile:
         plt.ylabel('Amplitude')
         plt.title(self.audio_path.split('/')[-1] )
         plt.show()
+
+
+class ColorPrint:
+    _RESET = "\033[0m"
+    _RED = "\033[31m"
+    _GREEN = "\033[32m"
+    _YELLOW = "\033[33m"
+
+    @classmethod
+    def Info(cls, message: str) -> None:
+        print(f"{cls._GREEN}{message}{cls._RESET}")
+
+    @classmethod
+    def Error(cls, message: str) -> None:
+        print(f"{cls._RED}{message}{cls._RESET}")
+
+    @classmethod
+    def Warning(cls, message: str) -> None:
+        print(f"{cls._YELLOW}{message}{cls._RESET}")
+
+
+class TitlePrint(ColorPrint):        
+    _total_length : int = 100
+    @classmethod
+    def PrepareMessage(cls,message:str) -> str:
+        n = (cls._total_length - len(message)) // 2
+        m = cls._total_length - len(message) - n
+        return '-'*n + message + '-'*m
+
+    @classmethod
+    def Info(cls, message: str, newLine:int = -2) -> None:
+        for _ in range(-newLine):
+            print()
+        print(f"{cls._GREEN}{cls.PrepareMessage(message)}{cls._RESET}")
+        for _ in range(newLine):
+            print()
+
+    @classmethod
+    def Error(cls, message: str, newLine:int = -2) -> None:
+        for _ in range(-newLine):
+            print()
+        print(f"{cls._RED}{cls.PrepareMessage(message)}{cls._RESET}")
+        for _ in range(newLine):
+            print()
+
+    @classmethod
+    def Warning(cls, message: str, newLine:int = -2) -> None:
+        for _ in range(-newLine):
+            print()
+        print(f"{cls._YELLOW}{cls.PrepareMessage(message)}{cls._RESET}")
+        for _ in range(newLine):
+            print()

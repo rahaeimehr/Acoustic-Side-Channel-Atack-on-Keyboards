@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import keystrokes_detection.xls_handler as xls
 import librosa
+import os
 from audio_handler import AudioHandler
 
 def find_segments(bool_array, time):
@@ -130,8 +131,11 @@ def smooth(y, box_pts):
 
 
 if __name__ == '__main__':
-    au = AudioHandler('TestFiles/4/words.wav')
+
+    base_folder = os.getcwd() + r"/TestFiles/1/"        
+    au = AudioHandler(base_folder + 'words.wav')
     au.print_audio_info()
+    
     plot_waveform(au)
  
 
