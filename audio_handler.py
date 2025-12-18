@@ -6,7 +6,7 @@ from typing import Dict, Optional
 import librosa
 import numpy as np
 import soundfile as sf
-from data_structures import TitlePrint as title
+from my_utilities import TitlePrint as title
 
 
 class AudioHandler:

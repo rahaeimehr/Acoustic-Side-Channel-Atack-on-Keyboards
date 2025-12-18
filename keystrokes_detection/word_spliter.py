@@ -8,7 +8,7 @@ from scipy.io import wavfile as wav
 import noisereduce as nr
 import xls_handler
 from scipy.signal import wiener
-import data_structures as ds
+import my_utilities as ds
 
 class AudioSpliter:
     def __init__(self, audio_file):           

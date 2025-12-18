@@ -3,7 +3,7 @@ from train import MatrixMaker
 from word_spliter import WordSpliter
 from word_spliter import AudioSpliter
 from hex_to_ascii import main_converter
-import data_structures as ds
+import my_utilities as ds
 import os
 import helper
 

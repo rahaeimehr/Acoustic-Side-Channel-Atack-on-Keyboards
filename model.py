@@ -3,26 +3,27 @@ import math
 import numpy as np
 import xlsxwriter
 import pandas as pd
-from data_structures import TitlePrint as tp, ColorPrint as cp
+import consts
+from my_utilities import TitlePrint as tp, ColorPrint as cp, rep_code
+from pathlib import Path
 
 class Model:
-    def __init__(self, meta_data_file, model_file = "model2.xlsx",  append_to_model = True):
+    def __init__(self, meta_data_file, model_file = None,  append_to_model = True):
         self.previous_data = None
         self.worksheet = None
-        self.meta_data_file = meta_data_file
+        self.meta_data_file = Path(meta_data_file)
 
-        self.model_file = model_file
+        if model_file is None:
+            self.model_file = self.meta_data_file.parent / "model.xlsx"
+        else:
+            self.model_file = Path(model_file)
+            
 
         self.workbook = xlsxwriter.Workbook(self.model_file)
         self.worksheets = []
 
         self.data = []
-        self.keys = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q',
-                           'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',
-                           'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y',
-                           'z', '!', '"', '#', '$', '%', '&', "'", '(', ')', '*', '+', ',', '-', '.', '/',
-                           ':', ';', '<', '=', '>', '?', '@', '[', '\\', ']', '^', '_', '`', '{', '|', '}', '~',
-                           '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', ' ', '\r']
+
 
         if append_to_model and os.path.isfile(self.model_file):
             self.previous_data = pd.read_excel(self.model_file, sheet_name=f'data', header=0).to_numpy()
@@ -32,17 +33,21 @@ class Model:
     def close_file(self):
         self.workbook.close()
 
-    def write_matrix_to_file(self):
+    def write_model_to_file(self):
 
         self.worksheet = self.workbook.add_worksheet(f"data")
         self.worksheet.write(0, 0, 'First_Key')
         self.worksheet.write(0, 1, 'Second_Key')
         self.worksheet.write(0, 2, 'Delta_Time')
+        self.worksheet.write(0, 3, 'First_Key_Rep')
+        self.worksheet.write(0, 4, 'Second_Key_Rep')
 
         for index, row in enumerate(self.data):
             self.worksheet.write(index + 1, 0, row[0])
             self.worksheet.write(index + 1, 1, row[1])
             self.worksheet.write(index + 1, 2, row[2])
+            self.worksheet.write(index + 1, 3, row[3])
+            self.worksheet.write(index + 1, 4, row[4])
 
     def write_analysis_to_file(self):
 
@@ -110,22 +115,16 @@ class Model:
 
         sorted(res)
         
-        for i in range(len(res)):
-            print(i)
-            cp.Info(f"{i} : {res[i][2]} -> {ord(res[i][2])}\n")
-
-            if res[i][2] not in self.keys:
-                cp.Warning( f'NOT IN keys: {i} , code: {ord(res[i][2])}')
-                res[i][2] = 'Not Def'
-
-            if res[i][2] in {' ', '\r'}:
-                res[i][2] = 'Space'
+        for i in range(len(res)):            
+            ch = chr(res[i][2])
+            if ( ch not in consts.KEYS) and (ch not in consts.DELIMITERS):
+                cp.Error( f'NOT IN keys: {i} , code: {res[i][2]}, char : {repr(ch)}')
 
         for i in range(0, len(res) - 1):
             delta = (res[i + 1][0] - res[i][0])
-            self.data.append([res[i][2], res[i + 1][2], delta])
+            self.data.append([res[i][2], res[i + 1][2], delta , rep_code(res[i][2]), rep_code(res[i + 1][2])] )
 
-        self.write_matrix_to_file()
+        self.write_model_to_file()
         # self.write_analysis_to_file()
         self.close_file()
 
@@ -136,11 +135,9 @@ class Model:
             for line in file:
                 line = line.strip()
                 elements = line.split(split_char)
-                # print(elements)
                 elements[0] = int(elements[0]) / 10000000     # Time
-                elements[2] = chr(int(elements[2], 16))       # ascii (hex)
+                elements[2] = int(elements[2], 16)       # ascii (hex)
                 elements[3] = int(elements[3], 16)            # scan code
-                # print("elements:", elements)
                 lst.append(elements)
 
         return lst
@@ -148,8 +145,8 @@ class Model:
 
 if __name__ == '__main__':
     base_folder = os.getcwd() + r"/TestFiles/1/"     
-    Model( meta_data_file= base_folder+"random.txt").train()
-    cp.Info("model object is created!")
+    Model( meta_data_file= base_folder+"random.txt", append_to_model= True ).train()
+    cp.Info("A model object is created!")
     
 
 #     # meta_data_file = r"E:\alireza\augusta\codes\recorder\dataset\hani/random.txt"

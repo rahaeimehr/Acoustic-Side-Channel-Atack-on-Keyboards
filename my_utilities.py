@@ -141,3 +141,10 @@ class TitlePrint(ColorPrint):
         print(f"{cls._YELLOW}{cls.PrepareMessage(message)}{cls._RESET}")
         for _ in range(newLine):
             print()
+
+
+def rep_code(code:int) -> str:
+    ch = chr(code)
+    if ch.isprintable():
+        return ch
+    return repr(ch)[1:-1]   # strip quotes
