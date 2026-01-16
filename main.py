@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import keystrokes_detection.xls_handler as xls
 import librosa
 import os
+import time
 from audio_handler import AudioHandler
 
 def find_segments(bool_array, time):
@@ -121,7 +122,7 @@ def plot_waveform(au:AudioHandler):
     
     time = np.linspace(0, au.audio_length, num=au.sample_count)
     plt.plot(time, au.left_channel)
-    plt.show()
+    plt.show(block=False)
 
             
 def smooth(y, box_pts):
@@ -132,12 +133,18 @@ def smooth(y, box_pts):
 
 if __name__ == '__main__':
 
+    start_time = time.perf_counter()
+
     base_folder = os.getcwd() + r"/TestFiles/1/"        
     au = AudioHandler(base_folder + 'words.wav')
     au.print_audio_info()
     
     plot_waveform(au)
- 
+    
+    end_time = time.perf_counter()
+
+    elapsed_time = end_time - start_time
+    print(f"Execution time: {elapsed_time:.6f} seconds")
 
     # for i in range(1,4):
     #     base_addres = 'TestFiles/2/words'
